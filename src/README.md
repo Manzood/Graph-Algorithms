@@ -1,4 +1,9 @@
-# Graph Theory, Applications and Combinatorics Assigment 1
+# Graph Algorithms
+
+This is a work in progress, which I will get back to and update sometime in the future.
+
+The repository currently contains the implementation of a few common graph algorithms. It initally started off as an Assignment in a college course.
+I will almost definitely update the graph generator sometime in the future, as it can potentially be useful for problemsetting/debugging code while competitive programming.
 
 Points to note:
 
