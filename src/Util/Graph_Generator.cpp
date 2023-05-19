@@ -5,9 +5,16 @@
 #else
 #define debug(x) 42;
 #endif
+#include <ext/pb_ds/assoc_container.hpp>
 
 using namespace std;
+using namespace __gnu_pbds;
+
 #define int long long
+
+typedef tree<int, null_type, less<int>, rb_tree_tag,
+             tree_order_statistics_node_update>
+    indexed_set;
 
 // author: Manzood Naqvi
 // NOTE: This is a work in progress. It currently does not work as well as I
@@ -67,21 +74,16 @@ class GraphGenerator {
     void printGraph() {
         printf("%lld %lld %lld\n", n, m, (int)weighted);
         set<pair<int, int>> edges;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
             for (auto x : graph[i]) {
                 int temp = i;
                 if (temp > x) swap(temp, x);
                 edges.insert({temp, x});
             }
-        }
         vector<pair<int, int>> e;
-        for (auto x : edges) {
-            e.push_back(x);
-        }
+        for (auto x : edges) e.push_back(x);
         shuffle(e.begin(), e.end(), rng);
-        for (auto x : e) {
-            printf("%lld %lld\n", x.first + 1, x.second + 1);
-        }
+        for (auto x : e) printf("%lld %lld\n", x.first + 1, x.second + 1);
     }
 
     void generateBipartiteGraph() {
@@ -112,6 +114,27 @@ class GraphGenerator {
             } while (edges.count(edge));
             graph[edge.first].push_back(edge.second);
             graph[edge.second].push_back(edge.first);
+        }
+    }
+
+    void generateTree() {
+        vector<int> temp(n);
+        iota(temp.begin(), temp.end(), 0);
+        indexed_set s;
+        vector<int> already;
+        for (auto x : temp) s.insert(x);
+        while (s.size()) {
+            int rem = (int)s.size();
+            int choice = uniform_int_distribution<int>(0, rem - 1)(rng);
+            auto it = s.find_by_order(rem);
+            if (already.size()) {
+                choice = uniform_int_distribution<int>(
+                    0, (int)already.size() - 1)(rng);
+                graph[already[choice]].push_back(*it);
+                graph[*it].push_back(already[choice]);
+            }
+            already.push_back(*it);
+            s.erase(it);
         }
     }
 };
