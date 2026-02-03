@@ -5,16 +5,38 @@
 #else
 #define debug(x) 42;
 #endif
+#ifndef GRAPH_GENERATOR_FALLBACK_INDEXED_SET
 #include <ext/pb_ds/assoc_container.hpp>
+#endif
 
 using namespace std;
-using namespace __gnu_pbds;
-
 #define int long long
+
+#ifndef GRAPH_GENERATOR_FALLBACK_INDEXED_SET
+using namespace __gnu_pbds;
 
 typedef tree<int, null_type, less<int>, rb_tree_tag,
              tree_order_statistics_node_update>
     indexed_set;
+#else
+class indexed_set {
+    std::vector<int> data_;
+
+   public:
+    void insert(int value) {
+        data_.push_back(value);
+        std::sort(data_.begin(), data_.end());
+    }
+
+    std::size_t size() const { return data_.size(); }
+
+    std::vector<int>::iterator find_by_order(std::size_t order) {
+        return data_.begin() + order;
+    }
+
+    void erase(std::vector<int>::iterator it) { data_.erase(it); }
+};
+#endif
 
 // author: Manzood Naqvi
 // NOTE: This is a work in progress. It currently does not work as well as I
@@ -35,19 +57,26 @@ class GraphGenerator {
         weights.resize(n, vector<int>(n, 0));
     }
 
+    const vector<vector<int>>& adjacency() const { return graph; }
+    const vector<vector<int>>& weightMatrix() const { return weights; }
+    int numVertices() const { return n; }
+    int numEdges() const { return m; }
+    bool isWeighted() const { return weighted; }
+
     void generateUnweightedGraph() {
         // make random edges, add them
         // TODO: consider the possibility of self loops and cycles
         set<pair<int, int>> edges;
-        for (int i = 0; i < m; i++) {
-            pair<int, int> edge;
-            do {
-                int sourceNode = uniform_int_distribution<int>(0, n - 1)(rng);
-                int destNode = uniform_int_distribution<int>(0, n - 1)(rng);
-                edge = {sourceNode, destNode};
-            } while (edges.count(edge));
-            graph[edge.first].push_back(edge.second);
-            graph[edge.second].push_back(edge.first);
+        while ((int)edges.size() < m) {
+            int sourceNode = uniform_int_distribution<int>(0, n - 1)(rng);
+            int destNode = uniform_int_distribution<int>(0, n - 1)(rng);
+            if (sourceNode == destNode) continue;
+            int u = sourceNode;
+            int v = destNode;
+            if (u > v) swap(u, v);
+            if (!edges.insert({u, v}).second) continue;
+            graph[u].push_back(v);
+            graph[v].push_back(u);
         }
     }
 
@@ -101,19 +130,17 @@ class GraphGenerator {
         }
         // make m edges between set 1 and set 2
         set<pair<int, int>> edges;
-        for (int i = 0; i < m; i++) {
-            pair<int, int> edge;
-            do {
-                int temp1 =
-                    uniform_int_distribution<int>(0, (int)set1.size() - 1)(rng);
-                int temp2 =
-                    uniform_int_distribution<int>(0, (int)set2.size() - 1)(rng);
-                temp1 = set1[temp1];
-                temp2 = set2[temp2];
-                edge = {temp1, temp2};
-            } while (edges.count(edge));
-            graph[edge.first].push_back(edge.second);
-            graph[edge.second].push_back(edge.first);
+        while ((int)edges.size() < m) {
+            int temp1 =
+                uniform_int_distribution<int>(0, (int)set1.size() - 1)(rng);
+            int temp2 =
+                uniform_int_distribution<int>(0, (int)set2.size() - 1)(rng);
+            int u = set1[temp1];
+            int v = set2[temp2];
+            if (u > v) swap(u, v);
+            if (!edges.insert({u, v}).second) continue;
+            graph[u].push_back(v);
+            graph[v].push_back(u);
         }
     }
 
@@ -126,7 +153,7 @@ class GraphGenerator {
         while (s.size()) {
             int rem = (int)s.size();
             int choice = uniform_int_distribution<int>(0, rem - 1)(rng);
-            auto it = s.find_by_order(rem);
+            auto it = s.find_by_order(choice);
             if (already.size()) {
                 choice = uniform_int_distribution<int>(
                     0, (int)already.size() - 1)(rng);
@@ -139,6 +166,7 @@ class GraphGenerator {
     }
 };
 
+#ifndef GRAPH_GENERATOR_NO_MAIN
 int32_t main(int32_t argc, char* argv[]) {
     int n = atoi(argv[1]);
     int m = atoi(argv[2]);
@@ -149,3 +177,4 @@ int32_t main(int32_t argc, char* argv[]) {
     Gen.generateUnweightedGraph();
     Gen.printGraph();
 }
+#endif
